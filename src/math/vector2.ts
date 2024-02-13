@@ -46,3 +46,7 @@ export function normalize(a: vec2): vec2 {
         y: a.y / m,
     };
 }
+
+export function toArray(v: vec2) {
+    return [v.x, v.y];
+}

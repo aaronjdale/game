@@ -50,3 +50,7 @@ export function normalize(a: vec3): vec3 {
         z: a.z / m,
     };
 }
+
+export function toArray(v: vec3) {
+    return [v.x, v.y, v.z];
+}

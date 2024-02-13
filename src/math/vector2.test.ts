@@ -1,6 +1,6 @@
 import { expect, test, describe } from "bun:test";
 
-import { vec2, add, subtract, magnitude, normalize } from "./vector2";
+import { vec2, add, subtract, magnitude, normalize, toArray } from "./vector2";
 
 /**
  * Test adding vec2
@@ -61,5 +61,15 @@ describe("normalize", () => {
     test("normalize", () => {
         const a: vec2 = { x: 3, y: 2 };
         expect(normalize(a)).toEqual({ x: 0.8320502943378437, y: 0.5547001962252291 });
+    });
+});
+
+/**
+ * Test converting vector to an array
+ */
+describe("toArray", () => {
+    test("basic", () => {
+        const a: vec2 = { x: 3, y: 2 };
+        expect(toArray(a)).toEqual([a.x, a.y]);
     });
 });

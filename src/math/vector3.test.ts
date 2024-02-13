@@ -1,6 +1,6 @@
 import { expect, test, describe } from "bun:test";
 
-import { vec3, add, subtract, magnitude, normalize } from "./vector3";
+import { vec3, add, subtract, magnitude, normalize, toArray } from "./vector3";
 
 /**
  * Test adding vec3
@@ -16,6 +16,15 @@ describe("add", () => {
         const b: vec3 = { x: -2, y: 1, z: 6 };
         expect(add(a, b)).toEqual({ x: -1, y: 4, z: 5 });
         expect(add(a, b)).toEqual({ x: -1, y: 4, z: 5 });
+    });
+    test("ensure immutable", () => {
+        const a: vec3 = { x: 1, y: 3, z: -1 };
+        const b: vec3 = { x: -2, y: 1, z: 6 };
+
+        const c = add(a, b);
+
+        expect(a).toEqual({ x: 1, y: 3, z: -1 });
+        expect(b).toEqual({ x: -2, y: 1, z: 6 });
     });
 });
 
@@ -61,5 +70,15 @@ describe("normalize", () => {
     test("normalize", () => {
         const a: vec3 = { x: 3, y: 2, z: -1 };
         expect(normalize(a)).toEqual({ x: 0.8017837257372732, y: 0.5345224838248488, z: -0.2672612419124244 });
+    });
+});
+
+/**
+ * Test converting vector to an array
+ */
+describe("toArray", () => {
+    test("basic", () => {
+        const a: vec3 = { x: 3, y: 2, z: -1 };
+        expect(toArray(a)).toEqual([a.x, a.y, a.z]);
     });
 });
