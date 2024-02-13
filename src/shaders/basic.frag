@@ -9,6 +9,5 @@ uniform sampler2D uSampler;
 out vec4 outputColor;
 
 void main() {
-    outputColor = texture(uSampler, textureCoord);
-    //outputColor = vec4(fragmentColour, 1.0);
+    outputColor = texture(uSampler, textureCoord) * vec4(fragmentColour, 1.0);
 }
