@@ -3,16 +3,22 @@ import "./style.css";
 import vertexShaderString from "./shaders/basic.vert?raw";
 import fragmentShaderString from "./shaders/basic.frag?raw";
 import { createProgram, getAttributeLocation, getUniformLocation } from "./shader";
+import { Mat4 } from "./math/Mat4";
+import { Vec3 } from "./math/Vec3";
 
 const testTextureUrl = new URL("/test.jpg", import.meta.url).href;
 
 let gl: WebGL2RenderingContext;
 let canvas: HTMLCanvasElement;
 
+let height: number = 600;
+let width: number = 800;
+
 const triangleData = new Float32Array([
     // top mid
     0, //x
     1, //y
+    0, //z
     1, // r
     0, // g
     0, // b
@@ -21,6 +27,7 @@ const triangleData = new Float32Array([
     // bottom left
     -1, //x
     -1, //y
+    0, //z
     0, //r
     1, //g
     0, //b
@@ -29,6 +36,7 @@ const triangleData = new Float32Array([
     // bottom right
     1, //x
     -1, //y
+    0, //z
     0, //r
     0, //g
     1, //b
@@ -85,11 +93,11 @@ function createVertexArrayObject(
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-    const stride = 7 * Float32Array.BYTES_PER_ELEMENT;
+    const stride = 8 * Float32Array.BYTES_PER_ELEMENT;
 
-    gl.vertexAttribPointer(posAttribute, 2, gl.FLOAT, false, stride, 0);
-    gl.vertexAttribPointer(colAttribute, 3, gl.FLOAT, false, stride, 2 * Float32Array.BYTES_PER_ELEMENT);
-    gl.vertexAttribPointer(texCoordAttribute, 2, gl.FLOAT, false, stride, 5 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribPointer(posAttribute, 3, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribPointer(colAttribute, 3, gl.FLOAT, false, stride, 3 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribPointer(texCoordAttribute, 2, gl.FLOAT, false, stride, 6 * Float32Array.BYTES_PER_ELEMENT);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.bindVertexArray(null); // unbind to prevent accidental writing
@@ -165,6 +173,14 @@ function tick(timestamp: number) {
 let texture: WebGLTexture;
 let texUniform: WebGLUniformLocation;
 
+let matrixModel: WebGLUniformLocation;
+let matrixView: WebGLUniformLocation;
+let matrixProjection: WebGLUniformLocation;
+
+let model = new Mat4();
+let view = new Mat4();
+let projection = new Mat4();
+
 function setup() {
     const triangleBuffer = gl.createBuffer();
     if (!triangleBuffer) {
@@ -179,6 +195,11 @@ function setup() {
     const vertexPositionAttributeLocation = getAttributeLocation(gl, program, "vertexPosition");
     const vertexColourAttributeLocation = getAttributeLocation(gl, program, "vertexColour");
     const vertexTextureCoordAttributeLocation = getAttributeLocation(gl, program, "vertexTexCoord");
+
+    matrixModel = getUniformLocation(gl, program, "model");
+    matrixView = getUniformLocation(gl, program, "view");
+    matrixProjection = getUniformLocation(gl, program, "projection");
+
     vao = createVertexArrayObject(
         gl,
         triangleBuffer,
@@ -187,6 +208,7 @@ function setup() {
         vertexTextureCoordAttributeLocation
     );
 
+    // texuture
     texture = createTexture(gl, testTextureUrl);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
@@ -197,18 +219,19 @@ function setup() {
  *
  */
 function render() {
-    // output merger
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-
     gl.clearColor(0.08, 0.08, 0.08, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
     // rasterizer/camera
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.viewport(0, 0, width, height);
 
     // vertex shader+fragment shader
     gl.useProgram(program);
+
+    // set matrices
+    gl.uniformMatrix4fv(matrixModel, false, model.elements);
+    gl.uniformMatrix4fv(matrixView, false, view.elements);
+    gl.uniformMatrix4fv(matrixProjection, false, projection.elements);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -247,12 +270,24 @@ function getContext(canvas: HTMLCanvasElement) {
 
 let vao: WebGLVertexArrayObject;
 let program: WebGLProgram;
+
+const onResize = () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    console.log(`height:${height}`);
+    console.log(`width:${width}`);
+};
+
 /**
  * Entry point
  */
 async function main() {
     canvas = getCanvas("#gameCanvas");
     gl = getContext(canvas);
+
+    // set window size and watch for resize
+    onResize();
+    addEventListener("resize", onResize);
 
     setup();
     window.requestAnimationFrame(tick);

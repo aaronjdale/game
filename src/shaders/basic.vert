@@ -9,8 +9,12 @@ in vec2 vertexTexCoord;
 out mediump vec2 textureCoord;
 out vec3 fragmentColour;
 
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
 void main() {
     fragmentColour = vertexColour;
     textureCoord = vertexTexCoord;
-    gl_Position = vec4(vertexPosition, 0.0, 1.0);
+    gl_Position = projection * view * model * vec4(vertexPosition, 0.0, 1.0);
 }

@@ -1,137 +1,100 @@
-export interface vec3 {
-    x: number;
-    y: number;
-    z: number;
-}
+export class Vec3 {
+    x: number = 0;
+    y: number = 0;
+    z: number = 0;
 
-export namespace vec3 {
-    export function from(x: number, y: number, z: number) {
-        return {
-            x,
-            y,
-            z,
-        };
+    constructor(x: number = 0, y: number = 0, z: number = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
 
-    /**
-     * Adds vector B to vector A
-     * @param a
-     * @param b
-     * @returns
-     */
-    export function add(a: vec3, b: vec3): vec3 {
-        return {
-            x: a.x + b.x,
-            y: a.y + b.y,
-            z: a.z + b.z,
-        };
+    set(x: number, y: number, z: number) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        return this;
     }
 
-    /**
-     * Adds a scalar value to each component of a vector
-     * @param a
-     * @param n
-     * @returns
-     */
-    export function addScalar(a: vec3, n: number) {
-        return {
-            x: a.x + n,
-            y: a.y + n,
-            z: a.z + n,
-        };
-    }
-
-    /**
-     * Subtracts vector B from vector A
-     * @param a
-     * @param b
-     * @returns
-     */
-    export function subtract(a: vec3, b: vec3): vec3 {
-        return {
-            x: a.x - b.x,
-            y: a.y - b.y,
-            z: a.z - b.z,
-        };
-    }
-
-    /**
-     * Subtracts a scalar value from all components of a vector
-     * @param a
-     * @param n
-     * @returns
-     */
-    export function subtractScalar(a: vec3, n: number): vec3 {
-        return {
-            x: a.x - n,
-            y: a.y - n,
-            z: a.z - n,
-        };
-    }
-
-    /**
-     * Calculates the magnitude of a vector
-     * @param a
-     * @returns
-     */
-    export function magnitude(a: vec3): number {
-        const length = a.x * a.x + a.y * a.y + a.z * a.z;
-        return Math.sqrt(length);
-    }
-
-    /**
-     * Normalize a vector
-     * @param a
-     * @returns
-     */
-    export function normalize(a: vec3): vec3 {
-        const m = magnitude(a);
-        return {
-            x: a.x / m,
-            y: a.y / m,
-            z: a.z / m,
-        };
-    }
-
-    /**
-     * Calculate the dot product of two vectors
-     * @param a
-     * @param b
-     */
-    export function dot(a: vec3, b: vec3): number {
+    static dot(a: Vec3, b: Vec3) {
         return a.x * b.x + a.y * b.y + a.z * b.z;
     }
 
-    /**
-     * Calcuate the cross product of two vectors
-     * @param a
-     * @param b
-     */
-    export function cross(a: vec3, b: vec3): vec3 {
+    dot(other: Vec3) {
+        return Vec3.dot(this, other);
+    }
+
+    static cross(a: Vec3, b: Vec3, out: Vec3 = new Vec3()) {
         const x = a.y * b.z - a.z * b.y;
         const y = a.z * b.x - a.x * b.z;
         const z = a.x * b.y - a.y * b.x;
-        return { x, y, z };
+        return out.set(x, y, z);
     }
 
-    /**
-     * Converts to array
-     * @param v
-     * @returns
-     */
-    export function toArray(v: vec3) {
-        return [v.x, v.y, v.z];
+    cross(other: Vec3) {
+        return Vec3.cross(this, other, this);
     }
 
-    /**
-     * Converts an array into a vec3 object
-     * @param arr
-     * @returns
-     */
-    export function fromArray(arr: Array<number>): vec3 {
-        if (arr.length !== 3) {
-            throw new Error(`Expected an array of length 3, got: ${arr.length}`);
-        }
-        return { x: arr[0], y: arr[1], z: arr[2] };
+    static magnitudeSq(v: Vec3) {
+        const length = Vec3.dot(v, v);
+        return length;
+    }
+
+    static magnitude(v: Vec3) {
+        const length = Vec3.dot(v, v);
+        return Math.sqrt(length);
+    }
+
+    magnitude() {
+        return Vec3.magnitude(this);
+    }
+
+    static normalize(v: Vec3, out: Vec3 = new Vec3()) {
+        const m = Vec3.magnitude(v);
+        return out.set(v.x / m, v.y / m, v.z / m);
+    }
+
+    normalize() {
+        return Vec3.normalize(this);
+    }
+
+    static add(a: Vec3, b: Vec3, out: Vec3 = new Vec3()) {
+        return out.set(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
+
+    add(other: Vec3) {
+        return Vec3.add(this, other, this);
+    }
+
+    static addScalar(a: Vec3, n: number, out: Vec3 = new Vec3()) {
+        return out.set(a.x + n, a.y + n, a.z + n);
+    }
+
+    addScalar(n: number) {
+        return Vec3.addScalar(this, n, this);
+    }
+
+    static subtractScalar(a: Vec3, n: number, out: Vec3 = new Vec3()) {
+        return out.set(a.x - n, a.y - n, a.z - n);
+    }
+
+    subtractScalar(n: number) {
+        return Vec3.subtractScalar(this, n, this);
+    }
+
+    static subtract(a: Vec3, b: Vec3, out: Vec3 = new Vec3()) {
+        return out.set(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
+    subtract(other: Vec3) {
+        return Vec3.subtract(this, other, this);
+    }
+
+    static negate(v: Vec3, out = new Vec3()) {
+        return out.set(-v.x, -v.y, -v.z);
+    }
+
+    negate() {
+        return Vec3.negate(this);
     }
 }
