@@ -1,119 +1,38 @@
 import "./style.css";
+import basicVertexShaderSource from "./shaders/basic.vert?raw";
+import basicFragmentShaderSource from "./shaders/basic.frag?raw";
 
-import vertexShaderString from "./shaders/basic.vert?raw";
-import fragmentShaderString from "./shaders/basic.frag?raw";
-import { createProgram, getAttributeLocation, getUniformLocation } from "./shader";
-import { Mat4 } from "./math/Mat4";
-import { Vec3 } from "./math/Vec3";
+import * as ShaderUtils from "./graphics/ShaderUtils";
+import * as BufferUtils from "./graphics/BufferUtils";
+import { letterGeometry } from "./graphics/PresetData";
+import { getCanvas, getContextFromCanvas, resizeCanvas } from "./canvas";
+import { m3 } from "./math/Matrix3";
+import { m4 } from "./math/Matrix4";
 
 const testTextureUrl = new URL("/test.jpg", import.meta.url).href;
 
 let gl: WebGL2RenderingContext;
-let canvas: HTMLCanvasElement;
+let program: WebGLShader;
 
-let height: number = 600;
-let width: number = 800;
+let world = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+let view = m4.identity();
+let projection = m4.identity();
 
-const triangleData = new Float32Array([
-    // top mid
-    0, //x
-    1, //y
-    0, //z
-    1, // r
-    0, // g
-    0, // b
-    0.0, // u
-    0.0, // v
-    // bottom left
-    -1, //x
-    -1, //y
-    0, //z
-    0, //r
-    1, //g
-    0, //b
-    1.0, //u
-    0.0, // v
-    // bottom right
-    1, //x
-    -1, //y
-    0, //z
-    0, //r
-    0, //g
-    1, //b
-    0.5, //u
-    1.0, // v
-]);
+let radians = 0;
 
-// const shaderurl = new URL("/basic.glsl", import.meta.url).href;
-// console.log(`fetching shader from: ${shaderurl}`);
-// fetch(shaderurl)
-//     .then((response) => response.text())
-//     .then((text) => console.log(text));
+let worldMatrixUniformLoc: WebGLUniformLocation;
+let projectionMatrixUniformLoc: WebGLUniformLocation;
+let viewMatrixUniformLoc: WebGLUniformLocation;
+let samplerUniformLoc: WebGLUniformLocation;
 
-/**
- * Shows an error in the console and on the screen
- * @param error
- * @returns
- */
-function showError(error: string) {
-    console.error(error);
-    const errorBoxDiv = document.getElementById("errorBox");
-    if (!errorBoxDiv) {
-        return;
-    }
-
-    const textElement = document.createElement("p");
-    textElement.innerText = error;
-    errorBoxDiv.appendChild(textElement);
-}
-
-/**
- * Create VAO
- * @param gl
- * @param buffer
- * @param posAttribute
- * @param colAttribute
- * @returns
- */
-function createVertexArrayObject(
-    gl: WebGL2RenderingContext,
-    buffer: WebGLBuffer,
-    posAttribute: number,
-    colAttribute: number,
-    texCoordAttribute: number
-) {
-    const vao = gl.createVertexArray();
-    if (!vao) {
-        throw new Error("Failed to create vertex array object.");
-    }
-    gl.bindVertexArray(vao);
-    gl.enableVertexAttribArray(posAttribute);
-    gl.enableVertexAttribArray(colAttribute);
-    gl.enableVertexAttribArray(texCoordAttribute);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-    const stride = 8 * Float32Array.BYTES_PER_ELEMENT;
-
-    gl.vertexAttribPointer(posAttribute, 3, gl.FLOAT, false, stride, 0);
-    gl.vertexAttribPointer(colAttribute, 3, gl.FLOAT, false, stride, 3 * Float32Array.BYTES_PER_ELEMENT);
-    gl.vertexAttribPointer(texCoordAttribute, 2, gl.FLOAT, false, stride, 6 * Float32Array.BYTES_PER_ELEMENT);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, null);
-    gl.bindVertexArray(null); // unbind to prevent accidental writing
-
-    return vao;
-}
+let positionAttribLoc: number;
+let colourAttribLoc: number;
+let uvAttribLoc: number;
+let buffer: WebGLBuffer;
 
 const isPowerOf2 = (value: number) => (value & (value - 1)) === 0;
 
-/**
- * Create a texture
- * @param gl
- * @param url
- * @returns
- */
-function createTexture(gl: WebGL2RenderingContext, url: string) {
+function createTexture(url: string) {
     const texture = gl.createTexture();
     if (!texture) {
         throw new Error("Failed to create texture.");
@@ -156,141 +75,144 @@ function createTexture(gl: WebGL2RenderingContext, url: string) {
     return texture;
 }
 
-let prevTimestamp = 0;
-
-let updateId; // used to cancel the animation frame request
-
-function tick(timestamp: number) {
-    const elapsedSeconds = (timestamp - prevTimestamp) / 1000;
-    prevTimestamp = timestamp;
-    //const fps = Math.round(1 / elapsedSeconds);
-
-    updateId = window.requestAnimationFrame(tick);
-
-    render();
-}
-
 let texture: WebGLTexture;
-let texUniform: WebGLUniformLocation;
 
-let matrixModel: WebGLUniformLocation;
-let matrixView: WebGLUniformLocation;
-let matrixProjection: WebGLUniformLocation;
-
-let model = new Mat4();
-let view = new Mat4();
-let projection = new Mat4();
-
+/**
+ *
+ */
 function setup() {
-    const triangleBuffer = gl.createBuffer();
-    if (!triangleBuffer) {
-        throw new Error("Failed to create buffer.");
-    }
+    // create shader program
+    program = ShaderUtils.createProgram(gl, basicVertexShaderSource, basicFragmentShaderSource);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, triangleBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, triangleData, gl.STATIC_DRAW);
+    texture = createTexture(testTextureUrl);
+
+    // set clear colour
+    gl.clearColor(0.05, 0.05, 0.05, 1.0);
+
+    // get attribute locations
+    positionAttribLoc = ShaderUtils.getAttributeLocation(gl, program, "a_position");
+    colourAttribLoc = ShaderUtils.getAttributeLocation(gl, program, "a_colour");
+    uvAttribLoc = ShaderUtils.getAttributeLocation(gl, program, "a_texCoord");
+
+    // get uniform locations
+    worldMatrixUniformLoc = ShaderUtils.getUniformLocation(gl, program, "u_worldMatrix");
+    projectionMatrixUniformLoc = ShaderUtils.getUniformLocation(gl, program, "u_projectionMatrix");
+    viewMatrixUniformLoc = ShaderUtils.getUniformLocation(gl, program, "u_viewMatrix");
+
+    samplerUniformLoc = ShaderUtils.getUniformLocation(gl, program, "u_texture");
+
+    // create buffer and set data
+    buffer = BufferUtils.createBuffer(gl);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, letterGeometry, gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-    program = createProgram(gl, vertexShaderString, fragmentShaderString);
-    const vertexPositionAttributeLocation = getAttributeLocation(gl, program, "vertexPosition");
-    const vertexColourAttributeLocation = getAttributeLocation(gl, program, "vertexColour");
-    const vertexTextureCoordAttributeLocation = getAttributeLocation(gl, program, "vertexTexCoord");
+    //
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
 
-    matrixModel = getUniformLocation(gl, program, "model");
-    matrixView = getUniformLocation(gl, program, "view");
-    matrixProjection = getUniformLocation(gl, program, "projection");
-
-    vao = createVertexArrayObject(
-        gl,
-        triangleBuffer,
-        vertexPositionAttributeLocation,
-        vertexColourAttributeLocation,
-        vertexTextureCoordAttributeLocation
-    );
-
-    // texuture
-    texture = createTexture(gl, testTextureUrl);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
-    texUniform = getUniformLocation(gl, program, "uSampler");
+    // compute the projection matrix
+    projection = m4.perspective((75 * Math.PI) / 180.0, gl.canvas.width / gl.canvas.height, 1, 2000);
 }
 
 /**
  *
  */
 function render() {
-    gl.clearColor(0.08, 0.08, 0.08, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    resizeCanvas(gl.canvas as HTMLCanvasElement);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    // rasterizer/camera
-    gl.viewport(0, 0, width, height);
+    // clear frame
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // vertex shader+fragment shader
     gl.useProgram(program);
 
-    // set matrices
-    gl.uniformMatrix4fv(matrixModel, false, model.elements);
-    gl.uniformMatrix4fv(matrixView, false, view.elements);
-    gl.uniformMatrix4fv(matrixProjection, false, projection.elements);
+    // set projection matrix
+    gl.uniformMatrix4fv(projectionMatrixUniformLoc, false, projection);
+
+    const cameraPos = [
+        Math.sin(radians) * 600, //x
+        200, //y
+        Math.cos(radians) * 600, //z
+    ];
+
+    const up = [0, 1, 0];
+    const target = [0, 0, 0];
+
+    view = m4.lookAt(cameraPos, target, up);
+    view = m4.inverse(view);
+    gl.uniformMatrix4fv(viewMatrixUniformLoc, false, view);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(texUniform, 0);
+    gl.uniform1i(samplerUniformLoc, 0);
 
-    // primitive assembly
-    gl.bindVertexArray(vao);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-}
+    // compute and set world matrix
+    let numF = 6;
+    for (let i = 0; i < numF; ++i) {
+        let angle = (i * Math.PI * 2) / numF;
+        let radius = 400;
 
-/**
- * Gets a canvas with the specified ID
- * @param id
- * @returns
- */
-function getCanvas(id: string) {
-    let c = document.querySelector<HTMLCanvasElement>(id);
-    if (!c) {
-        throw new Error("Could not create canvas");
+        world = m4.identity();
+        world = m4.translate(world, 0, 0, -300);
+        world = m4.translate(world, Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        gl.uniformMatrix4fv(worldMatrixUniformLoc, false, world);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 3 + 4 + 2;
+
+        gl.enableVertexAttribArray(positionAttribLoc);
+        gl.vertexAttribPointer(positionAttribLoc, 3, type, normalize, stride * Float32Array.BYTES_PER_ELEMENT, 0);
+
+        gl.enableVertexAttribArray(colourAttribLoc);
+        gl.vertexAttribPointer(
+            colourAttribLoc,
+            4, // rgba
+            gl.FLOAT,
+            true,
+            stride * Float32Array.BYTES_PER_ELEMENT,
+            3 * Float32Array.BYTES_PER_ELEMENT
+        );
+
+        gl.enableVertexAttribArray(uvAttribLoc);
+        gl.vertexAttribPointer(
+            uvAttribLoc,
+            2,
+            gl.FLOAT,
+            false,
+            stride * Float32Array.BYTES_PER_ELEMENT,
+            (3 + 4) * Float32Array.BYTES_PER_ELEMENT
+        );
+
+        gl.drawArrays(gl.TRIANGLES, 0, letterGeometry.length / stride);
     }
-    return c;
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
-
-/**
- * Gets a WebGL context from a canvas
- * @param canvas
- * @returns
- */
-function getContext(canvas: HTMLCanvasElement) {
-    const context = canvas.getContext("webgl2");
-    if (!context) {
-        throw new Error("Could not create WebGL 2 context.");
-    }
-    return context;
-}
-
-let vao: WebGLVertexArrayObject;
-let program: WebGLProgram;
-
-const onResize = () => {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-    console.log(`height:${height}`);
-    console.log(`width:${width}`);
-};
 
 /**
  * Entry point
  */
 async function main() {
-    canvas = getCanvas("#gameCanvas");
-    gl = getContext(canvas);
-
-    // set window size and watch for resize
-    onResize();
-    addEventListener("resize", onResize);
+    const c = getCanvas("gameCanvas");
+    gl = getContextFromCanvas(c);
 
     setup();
+
+    let prevTimestamp = performance.now();
+    const tick = (timestamp: number) => {
+        const elapsedSeconds = (timestamp - prevTimestamp) / 1000.0;
+        prevTimestamp = timestamp;
+        window.requestAnimationFrame(tick);
+        // do update
+        radians = (timestamp * 0.1 * Math.PI) / 180.0;
+
+        render();
+    };
+
     window.requestAnimationFrame(tick);
 }
 
-main().catch((error) => showError(error));
+main().catch((error) => console.log(error));

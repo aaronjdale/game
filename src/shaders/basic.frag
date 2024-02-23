@@ -1,13 +1,13 @@
 #version 300 es
 precision mediump float;
 
-in vec3 fragmentColour;
-in vec2 textureCoord;
+in vec4 fragmentColour;
+in vec2 texCoord;
 
-uniform sampler2D uSampler;
+out vec4 outputColour;
 
-out vec4 outputColor;
+uniform sampler2D u_texture;
 
 void main() {
-    outputColor = texture(uSampler, textureCoord) * vec4(fragmentColour, 1.0);
+  outputColour = texture(u_texture, texCoord) * fragmentColour;
 }

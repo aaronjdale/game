@@ -29,8 +29,11 @@ export function createShader(gl: WebGL2RenderingContext, shaderType: number, sha
     }
     gl.shaderSource(shader, shaderSource);
     gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+
+    const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    if (!success) {
         const compileError = gl.getShaderInfoLog(shader);
+        gl.deleteShader(shader);
         throw new Error(`Failed to compile ${shaderTypeToString(gl, shaderType)} shader: ${compileError}`);
     }
 
