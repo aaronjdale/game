@@ -1,44 +1,43 @@
 name: my-workflow
 on: [push]
 jobs:
-    my-job:
+    build:
         name: my-job
         runs-on: ubuntu-latest
         steps:
-            # ...
-            - uses: actions/checkout@v4
-            - uses: oven-sh/setup-bun@v1
-              with:
-                  bun-version: 1.0.26 # or "latest", "canary", <sha>
-
-            # run any `bun` or `bunx` command
-            - run: bun install
-            - run: bun run build
-    deploy:
-        name: deploy artifact
-        runs-on: ubuntu-latest
-        steps:
+            # checkout
             - name: checkout
               uses: actions/checkout@v4
 
-            - run: echo hello > world.txt
-
-            - uses: actions/upload-artifact@v4
+            # build
+            - name: build
+              uses: oven-sh/setup-bun@v1
               with:
-                  name: my-artifact
-                  path: world.txt
-
-            - uses: actions/download-artifact@v4
+                  bun-version: 1.0.26 # or "latest", "canary", <sha>
+              run: bun install
+              run: bun run build
+            
+            # create artifact
+            - name: create build artifact
+              uses: actions/upload-artifact@v4
               with:
-                  name: my-artifact
-                  path: distfiles
+                name: dist-without-markdown
+                path: |
+                  dist
+                  !dist/**/*.md
 
-            - name: copy file to server
+            - name: download artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: dist-without-markdown
+                  path: html
+
+            - name: copy dist to server
               uses: appleboy/scp-action@v0.1.7
               with:
                   host: ${{ secrets.SSH_SERVER }}
                   username: ${{ secrets.SSH_USERNAME }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   port: ${{ secrets.SSH_PORT }}
-                  source: distfiles/*
+                  source: html/*
                   target: "/var/www/game.daltech.ca"
