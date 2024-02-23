@@ -2,31 +2,32 @@ name: my-workflow
 on: [push]
 jobs:
     build:
-        name: my-job
+        name: build
         runs-on: ubuntu-latest
         steps:
-            # checkout
-            - name: checkout
-              uses: actions/checkout@v4
-
-            # build
-            - name: build
-              uses: oven-sh/setup-bun@v1
+            # ...
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v1
               with:
-                  bun-version: 1.0.26 # or "latest", "canary", <sha>
-              run: |
-                  bun install
-                  bun run build
+                  bun-version: 1.0.26
+
+            # run any `bun` or `bunx` command
+            - run: bun install
+            - run: bun run build
 
             # create artifact
-            - name: create build artifact
-              uses: actions/upload-artifact@v4
+
+            - uses: actions/upload-artifact@v4
               with:
                   name: dist-without-markdown
                   path: |
                       dist
                       !dist/**/*.md
 
+    deploy:
+        name: deploy
+        needs: build
+            runs-on: ubuntu-latest
             - name: download artifact
               uses: actions/download-artifact@v4
               with:
