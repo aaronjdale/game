@@ -23,23 +23,3 @@ jobs:
                   path: |
                       dist
                       !dist/**/*.md
-
-    deploy:
-        name: deploy
-        needs: build
-            runs-on: ubuntu-latest
-            - name: download artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: dist-without-markdown
-                  path: html
-
-            - name: copy dist to server
-              uses: appleboy/scp-action@v0.1.7
-              with:
-                  host: ${{ secrets.SSH_SERVER }}
-                  username: ${{ secrets.SSH_USERNAME }}
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  port: ${{ secrets.SSH_PORT }}
-                  source: html/*
-                  target: "/var/www/game.daltech.ca"
