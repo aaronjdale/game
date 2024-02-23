@@ -6,7 +6,6 @@ import * as ShaderUtils from "./graphics/ShaderUtils";
 import * as BufferUtils from "./graphics/BufferUtils";
 import { letterGeometry } from "./graphics/PresetData";
 import { getCanvas, getContextFromCanvas, resizeCanvas } from "./canvas";
-import { m3 } from "./math/Matrix3";
 import { m4 } from "./math/Matrix4";
 
 const testTextureUrl = new URL("/test.jpg", import.meta.url).href;
@@ -203,6 +202,7 @@ async function main() {
 
     let prevTimestamp = performance.now();
     const tick = (timestamp: number) => {
+        // @ts-ignore
         const elapsedSeconds = (timestamp - prevTimestamp) / 1000.0;
         prevTimestamp = timestamp;
         window.requestAnimationFrame(tick);
