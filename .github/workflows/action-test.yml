@@ -14,17 +14,18 @@ jobs:
               uses: oven-sh/setup-bun@v1
               with:
                   bun-version: 1.0.26 # or "latest", "canary", <sha>
-              run: bun install
-              run: bun run build
-            
+              run: |
+                  bun install
+                  bun run build
+
             # create artifact
             - name: create build artifact
               uses: actions/upload-artifact@v4
               with:
-                name: dist-without-markdown
-                path: |
-                  dist
-                  !dist/**/*.md
+                  name: dist-without-markdown
+                  path: |
+                      dist
+                      !dist/**/*.md
 
             - name: download artifact
               uses: actions/download-artifact@v4
