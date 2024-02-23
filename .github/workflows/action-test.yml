@@ -23,3 +23,12 @@ jobs:
                   path: |
                       dist
                       !dist/**/*.md
+    deploy:
+        name: deploy
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  name: dist-without-markdown
+                  path: html
