@@ -1,4 +1,4 @@
-# game
+# math
 
 To install dependencies:
 

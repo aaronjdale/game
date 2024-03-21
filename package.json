@@ -1,17 +1,10 @@
 {
     "name": "game",
     "private": true,
-    "version": "0.0.0",
-    "type": "module",
+    "workspaces": [
+        "packages/*"
+    ],
     "scripts": {
-        "dev": "vite",
-        "build": "tsc && vite build",
-        "preview": "vite preview",
-        "perf": "bun math.performance.ts"
-    },
-    "devDependencies": {
-        "@types/bun": "^1.0.5",
-        "typescript": "^5.2.2",
-        "vite": "^5.1.0"
+        "clean": "rm -rf node_modules bun.lockb packages/*/node_modules packages/*/bun.lockb"
     }
 }

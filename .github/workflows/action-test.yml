@@ -1,8 +1,15 @@
 name: my-workflow
-on: [push]
+on:
+    push:
+        paths:
+            - "packages/web-client/**"
+            - ".github/workflows/action-test.yml"
 jobs:
     build:
         name: build
+        defaults:
+            run:
+                working-directory: ./packages/web-client
         runs-on: ubuntu-latest
         steps:
             # ...
@@ -12,8 +19,10 @@ jobs:
                   bun-version: 1.0.26
 
             # run any `bun` or `bunx` command
-            - run: bun install
-            - run: bun run build
+            - name: Install Dependencies
+              run: bun install
+            - name: Build
+              run: bun run build
 
             # create artifact
 
