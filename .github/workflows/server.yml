@@ -4,9 +4,6 @@ on:
         paths:
             - "packages/server/**"
             - ".github/workflows/server.yml"
-env:
-    NODE_ENV: ${{ vars.NODE_ENV }}
-
 jobs:
     build:
         name: build
@@ -16,28 +13,28 @@ jobs:
         runs-on: ubuntu-latest
         environment: production
         steps:
-            # ...
             - uses: actions/checkout@v4
-            - uses: oven-sh/setup-bun@v1
-              with:
-                  bun-version: 1.0.33
-
-            # run any `bun` or `bunx` command
-            - name: Check ENV
-              run: printenv
-            - name: Install Dependencies
-              run: bun install
-            - name: Build
-              run: bun run build
+            # - uses: oven-sh/setup-bun@v1
+            #   with:
+            #       bun-version: 1.0.33
+            # # run any `bun` or `bunx` command
+            # - name: Check ENV
+            #   run: printenv
+            # - name: Install Dependencies
+            #   run: bun install
+            # - name: Build
+            #   run: bun run build
 
             # create artifact
 
             - uses: actions/upload-artifact@v4
               with:
-                  name: server-dist-without-markdown
+                  name: server-dist
                   path: |
-                      packages/server/dist
-                      !packages/server/dist/**/*.md
+                      packages/server
+                      !packages/server/**/*.md
+                      !packages/server/**/*.env
+                      !packages/server/.gitignore
     deploy:
         name: deploy
         needs: build
@@ -47,7 +44,7 @@ jobs:
             - name: Copy build
               uses: actions/download-artifact@v4
               with:
-                  name: server-dist-without-markdown
+                  name: server-dist
                   path: html
 
             - name: Copy build to server
