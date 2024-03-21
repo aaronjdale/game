@@ -5,47 +5,46 @@ on:
             - "packages/server/**"
             - ".github/workflows/server.yml"
 jobs:
-    package:
-        name: package
+    build:
+        name: build
         defaults:
             run:
                 working-directory: ./packages/server
         runs-on: ubuntu-latest
         environment: production
         steps:
+            # ...
             - uses: actions/checkout@v4
-            # - uses: oven-sh/setup-bun@v1
-            #   with:
-            #       bun-version: 1.0.33
-            # # run any `bun` or `bunx` command
-            # - name: Check ENV
-            #   run: printenv
-            # - name: Install Dependencies
-            #   run: bun install
-            # - name: Build
-            #   run: bun run build
+            - uses: oven-sh/setup-bun@v1
+              with:
+                  bun-version: 1.0.33
+
+            # run any `bun` or `bunx` command
+            - name: Check ENV
+              run: printenv
+            - name: Install Dependencies
+              run: bun install
+            - name: Build
+              run: bun run build
 
             # create artifact
 
             - uses: actions/upload-artifact@v4
               with:
-                  name: server-dist
+                  name: server-dist-without-markdown
                   path: |
-                      ./
-                      !.github
-                      !packages/web-client
-                      !./**/*.md
-                      !./**/*.env
+                      packages/server/dist
+                      !packages/server/dist/**/*.md
     deploy:
         name: deploy
-        needs: package
+        needs: build
         runs-on: ubuntu-latest
         environment: production
         steps:
             - name: Copy build
               uses: actions/download-artifact@v4
               with:
-                  name: server-dist
+                  name: server-dist-without-markdown
                   path: app
 
             - name: Copy build to server
@@ -66,7 +65,5 @@ jobs:
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   port: ${{ secrets.SSH_PORT }}
                   script: |
-                      cd /var/www/gameserv.daltech.ca/app
-                      /home/aaron/.bun/bin/bun install
                       sudo systemctl restart gameserv
                       systemctl status gameserv
