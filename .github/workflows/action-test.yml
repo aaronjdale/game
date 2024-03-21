@@ -28,10 +28,10 @@ jobs:
 
             - uses: actions/upload-artifact@v4
               with:
-                  name: dist-without-markdown
+                  name: client-dist-without-markdown
                   path: |
-                      dist
-                      !dist/**/*.md
+                      packages/web-client/dist
+                      !packages/web-client/dist/**/*.md
     deploy:
         name: deploy
         needs: build
@@ -39,7 +39,7 @@ jobs:
         steps:
             - uses: actions/download-artifact@v4
               with:
-                  name: dist-without-markdown
+                  name: client-dist-without-markdown
                   path: html
             - uses: appleboy/scp-action@v0.1.7
               with:
