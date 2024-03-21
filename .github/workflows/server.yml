@@ -16,7 +16,7 @@ jobs:
             - uses: actions/checkout@v4
             - uses: oven-sh/setup-bun@v1
               with:
-                  bun-version: 1.0.26
+                  bun-version: 1.0.33
 
             # run any `bun` or `bunx` command
             - name: Install Dependencies
@@ -51,7 +51,7 @@ jobs:
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   port: ${{ secrets.SSH_PORT }}
                   source: html/*
-                  target: "/var/www/server.daltech.ca"
+                  target: "/var/www/gameserv.daltech.ca"
 
             - name: SSH Remote Commands
               uses: appleboy/ssh-action@v1.0.3
@@ -61,5 +61,5 @@ jobs:
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   port: ${{ secrets.SSH_PORT }}
                   script: |
-                      whoami
-                      ls -al
+                      sudo systemctl restart gameserv
+                      systemctl status gameserv

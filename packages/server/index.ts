@@ -1,12 +1,13 @@
 import { TEST_VALUE } from "math";
 
 const server = Bun.serve<{ authToken: string }>({
+    port: 3000,
     fetch(req, server) {
         const success = server.upgrade(req);
         if (success) {
             return undefined;
         }
-        return new Response("hello world");
+        return new Response(`hello world???: ${TEST_VALUE}`);
     },
     websocket: {
         async message(ws, message) {
