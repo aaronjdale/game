@@ -31,10 +31,11 @@ jobs:
               with:
                   name: server-dist
                   path: |
-                      packages/server
-                      !packages/server/**/*.md
-                      !packages/server/**/*.env
-                      !packages/server/.gitignore
+                      ./
+                      !.github
+                      !packages/web-client
+                      !./**/*.md
+                      !./**/*.env
     deploy:
         name: deploy
         needs: package
@@ -65,5 +66,6 @@ jobs:
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   port: ${{ secrets.SSH_PORT }}
                   script: |
+                      /home/aaron/.bun/bin/bun install
                       sudo systemctl restart gameserv
                       systemctl status gameserv
