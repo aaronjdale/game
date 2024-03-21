@@ -4,7 +4,7 @@
     "type": "module",
     "scripts": {
         "start": "bun run index.ts",
-        "build": "bun build --entrypoints ./index.ts --outdir ./dist --sourcemap=external"
+        "build": "bun build --entrypoints ./index.ts --outdir ./dist --sourcemap=external --minify"
     },
     "dependencies": {
         "@sentry/bun": "^7.107.0",

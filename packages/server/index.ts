@@ -16,34 +16,32 @@ Sentry.init({
     tracesSampleRate: 1.0, // Capture 100% of the transactions
 });
 
-const server = Bun.serve<{ authToken: string }>({
-    port: 3000,
-    fetch(req, server) {
-        const success = server.upgrade(req);
-        if (success) {
-            return undefined;
-        }
-        return new Response(`hello world???: ${TEST_VALUE}:${env}`);
-    },
-    websocket: {
-        async message(ws, message) {
-            console.log(`received: ${message}`);
-            ws.send(`echo: ${message}`);
-        },
-        open(ws) {
-            console.log("opened");
-        },
-        close(ws, code, reason) {
-            console.log(`${code}:${reason}`);
-        },
-    },
-});
-
-console.log(TEST_VALUE);
-console.log(`listening on ${server.hostname}:${server.port}`);
-
 try {
-    throw new Error("Sentry Bun test");
+    const server = Bun.serve<{ authToken: string }>({
+        port: 3000,
+        fetch(req, server) {
+            const success = server.upgrade(req);
+            if (success) {
+                return undefined;
+            }
+            return new Response(`hello world???: ${TEST_VALUE}:${env}`);
+        },
+        websocket: {
+            async message(ws, message) {
+                console.log(`received: ${message}`);
+                ws.send(`echo: ${message}`);
+            },
+            open(ws) {
+                console.log("opened");
+            },
+            close(ws, code, reason) {
+                console.log(`${code}:${reason}`);
+            },
+        },
+    });
+
+    console.log(TEST_VALUE);
+    console.log(`listening on ${server.hostname}:${server.port}`);
 } catch (e) {
     Sentry.captureException(e);
 }
