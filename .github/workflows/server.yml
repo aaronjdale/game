@@ -4,6 +4,9 @@ on:
         paths:
             - "packages/server/**"
             - ".github/workflows/server.yml"
+env:
+    NODE_ENV: ${{ vars.NODE_ENV }}
+
 jobs:
     build:
         name: build
