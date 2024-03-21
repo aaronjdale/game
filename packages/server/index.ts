@@ -21,5 +21,5 @@ const server = Bun.serve<{ authToken: string }>({
         },
     },
 });
-
+console.log(TEST_VALUE);
 console.log(`listening on ${server.hostname}:${server.port}`);

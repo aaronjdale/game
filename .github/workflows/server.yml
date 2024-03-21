@@ -23,3 +23,43 @@ jobs:
               run: bun install
             - name: Build
               run: bun run build
+
+            # create artifact
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: server-dist-without-markdown
+                  path: |
+                      packages/server/dist
+                      !packages/server/dist/**/*.md
+    deploy:
+        name: deploy
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Copy build
+              uses: actions/download-artifact@v4
+              with:
+                  name: server-dist-without-markdown
+                  path: html
+
+            - name: Copy build to server
+              uses: appleboy/scp-action@v0.1.7
+              with:
+                  host: ${{ secrets.SSH_SERVER }}
+                  username: ${{ secrets.SSH_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  port: ${{ secrets.SSH_PORT }}
+                  source: html/*
+                  target: "/var/www/server.daltech.ca"
+
+            - name: SSH Remote Commands
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SSH_SERVER }}
+                  username: ${{ secrets.SSH_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  port: ${{ secrets.SSH_PORT }}
+                  script: |
+                      whoami
+                      ls -al
