@@ -1,0 +1,25 @@
+name: server
+on:
+    push:
+        paths:
+            - "packages/server/**"
+            - ".github/workflows/server.yml"
+jobs:
+    build:
+        name: build
+        defaults:
+            run:
+                working-directory: ./packages/server
+        runs-on: ubuntu-latest
+        steps:
+            # ...
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v1
+              with:
+                  bun-version: 1.0.26
+
+            # run any `bun` or `bunx` command
+            - name: Install Dependencies
+              run: bun install
+            - name: Build
+              run: bun run build

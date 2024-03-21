@@ -1,9 +1,9 @@
-name: my-workflow
+name: client
 on:
     push:
         paths:
             - "packages/web-client/**"
-            - ".github/workflows/action-test.yml"
+            - ".github/workflows/client.yml"
 jobs:
     build:
         name: build
