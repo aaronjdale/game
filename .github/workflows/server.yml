@@ -11,6 +11,7 @@ jobs:
             run:
                 working-directory: ./packages/server
         runs-on: ubuntu-latest
+        environment: production
         steps:
             # ...
             - uses: actions/checkout@v4
@@ -36,6 +37,7 @@ jobs:
         name: deploy
         needs: build
         runs-on: ubuntu-latest
+        environment: production
         steps:
             - name: Copy build
               uses: actions/download-artifact@v4
