@@ -46,7 +46,7 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   name: server-dist
-                  path: html
+                  path: app
 
             - name: Copy build to server
               uses: appleboy/scp-action@v0.1.7
@@ -55,7 +55,7 @@ jobs:
                   username: ${{ secrets.SSH_USERNAME }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   port: ${{ secrets.SSH_PORT }}
-                  source: html/*
+                  source: app/*
                   target: "/var/www/gameserv.daltech.ca"
 
             - name: SSH Remote Commands
@@ -66,6 +66,7 @@ jobs:
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   port: ${{ secrets.SSH_PORT }}
                   script: |
+                      cd /var/www/gameserv.daltech.ca/app
                       /home/aaron/.bun/bin/bun install
                       sudo systemctl restart gameserv
                       systemctl status gameserv
