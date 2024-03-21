@@ -5,8 +5,8 @@ on:
             - "packages/server/**"
             - ".github/workflows/server.yml"
 jobs:
-    build:
-        name: build
+    package:
+        name: package
         defaults:
             run:
                 working-directory: ./packages/server
@@ -37,7 +37,7 @@ jobs:
                       !packages/server/.gitignore
     deploy:
         name: deploy
-        needs: build
+        needs: package
         runs-on: ubuntu-latest
         environment: production
         steps:
