@@ -1,16 +1,17 @@
+#!/usr/bin/env bun
 import * as Sentry from "@sentry/bun";
 
 import { TEST_VALUE } from "math";
 
-const env = process.env.NODE_ENV;
-const debug = process.env.NODE_ENV === "development";
+const env = Bun.env.NODE_ENV;
+const debug = Bun.env.NODE_ENV === "development";
 console.log(env);
 console.log(debug);
-console.log(process.env.GAMESERV_SENTRY_DSN);
+console.log(Bun.env.GAMESERV_SENTRY_DSN);
 
 Sentry.init({
     environment: env,
-    dsn: process.env.GAMESERV_SENTRY_DSN,
+    dsn: Bun.env.GAMESERV_SENTRY_DSN,
     // Performance Monitoring
     tracesSampleRate: 1.0, // Capture 100% of the transactions
 });
