@@ -37,6 +37,7 @@ try {
             close(ws, code, reason) {
                 console.log(`${code}:${reason}`);
             },
+            drain(ws) {},
         },
     });
 
