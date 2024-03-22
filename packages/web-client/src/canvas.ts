@@ -30,3 +30,19 @@ export function getContextFromCanvas(canvas: HTMLCanvasElement) {
     }
     return context;
 }
+
+/**
+ * Resizes a canvas element
+ * @param canvas Canvas to be resize
+ * @param multiplier Scale multipler, defaults to 1
+ * @returns True if canvas was resized, false otherwise
+ */
+export function resizeCanvas(canvas: HTMLCanvasElement, width: number, height: number) {
+    const needsResize = canvas.width !== width || canvas.height !== height;
+    if (needsResize) {
+        canvas.width = width;
+        canvas.height = height;
+        console.log(`resized canvas: ${width}, ${height}`);
+    }
+    return needsResize;
+}

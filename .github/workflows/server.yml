@@ -41,13 +41,24 @@ jobs:
         runs-on: ubuntu-latest
         environment: production
         steps:
-            - name: Copy build
+            - name: Download Build
               uses: actions/download-artifact@v4
               with:
                   name: server-dist-without-markdown
                   path: app
 
-            - name: Copy build to server
+            - name: Delete Old Build from Server
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SSH_SERVER }}
+                  username: ${{ secrets.SSH_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  port: ${{ secrets.SSH_PORT }}
+                  script: |
+                      cd /var/www/gameserv.daltech.ca/app
+                      rm -rf ./*
+
+            - name: Copy New Build to Server
               uses: appleboy/scp-action@v0.1.7
               with:
                   host: ${{ secrets.SSH_SERVER }}
@@ -57,7 +68,7 @@ jobs:
                   source: app/*
                   target: "/var/www/gameserv.daltech.ca"
 
-            - name: SSH Remote Commands
+            - name: Restart Service on Server
               uses: appleboy/ssh-action@v1.0.3
               with:
                   host: ${{ secrets.SSH_SERVER }}

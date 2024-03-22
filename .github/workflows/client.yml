@@ -39,11 +39,25 @@ jobs:
         runs-on: ubuntu-latest
         environment: production
         steps:
-            - uses: actions/download-artifact@v4
+            - name: Download Build
+              uses: actions/download-artifact@v4
               with:
                   name: client-dist-without-markdown
                   path: html
-            - uses: appleboy/scp-action@v0.1.7
+
+            - name: Delete Old Build from Server
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SSH_SERVER }}
+                  username: ${{ secrets.SSH_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  port: ${{ secrets.SSH_PORT }}
+                  script: |
+                      cd /var/www/game.daltech.ca/html
+                      rm -rf ./*
+
+            - name: Copy New Build to Server
+              uses: appleboy/scp-action@v0.1.7
               with:
                   host: ${{ secrets.SSH_SERVER }}
                   username: ${{ secrets.SSH_USERNAME }}
