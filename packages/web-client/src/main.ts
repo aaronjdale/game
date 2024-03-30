@@ -209,6 +209,7 @@ function render(elapsedSeconds: number) {
 }
 
 async function main() {
+    console.log("start");
     const canvas = getCanvasByID("#canvas");
     gl = getContextFromCanvas(canvas);
 
