@@ -1,0 +1,26 @@
+name: math
+on:
+    push:
+        paths:
+            - "packages/math/**"
+            - ".github/workflows/math.yml"
+jobs:
+    test:
+        name: test
+        defaults:
+            run:
+                working-directory: ./packages/math
+        runs-on: ubuntu-latest
+        environment: production
+        steps:
+            # ...
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v1
+              with:
+                  bun-version: 1.0.33
+
+            # run any `bun` or `bunx` command
+            - name: Install Dependencies
+              run: bun install
+            - name: Test
+              run: bun test --coverage
