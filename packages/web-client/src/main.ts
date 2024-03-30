@@ -7,9 +7,9 @@ import { createProgram, createShader, deleteShader } from "./shader";
 import { Colours } from "./Colour4";
 import { positions, colours } from "./vao_data";
 
-import { Mat4 } from "math/src/Mat4";
-import { Vec3 } from "math/src/Vec3";
-import { degreesToRadians } from "math/src/Helpers";
+import { Mat4 } from "math/Mat4";
+import { Vec3 } from "math/Vec3";
+import { degreesToRadians } from "math/Helpers";
 
 let displayWidth = 0;
 let displayHeight = 0;
