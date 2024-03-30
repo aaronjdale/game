@@ -16,6 +16,10 @@ export function createShader(gl: WebGL2RenderingContext, shaderType: number, src
     return shader;
 }
 
+export function deleteShader(gl: WebGL2RenderingContext, shader: WebGLShader) {
+    gl.deleteShader(shader);
+}
+
 export function createProgram(gl: WebGL2RenderingContext, vert: WebGLShader, frag: WebGLShader) {
     const program = gl.createProgram();
     if (!program) {
