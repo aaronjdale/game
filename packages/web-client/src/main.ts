@@ -10,6 +10,8 @@ import { positions, colours } from "./vao_data";
 import { Mat4 } from "math/Mat4";
 import { Vec3 } from "math/Vec3";
 import { degreesToRadians } from "math/Helpers";
+import { getRemoteText } from "./helper";
+import { parseObj, vertex } from "./obj";
 
 let displayWidth = 0;
 let displayHeight = 0;
@@ -54,11 +56,16 @@ let program: WebGLProgram;
 
 let projectionMatrixUniform: WebGLUniformLocation;
 let worldMatrixUniform: WebGLUniformLocation;
+let viewMatrixUniform: WebGLUniformLocation;
+
+let cameraPosition: Vec3 = new Vec3(1000, 100, 1000);
+let cameraTarget: Vec3 = new Vec3(0, 0, 0);
 
 let vao: WebGLVertexArrayObject;
 
 let matWorld = new Mat4();
 let matProj = new Mat4();
+let matView = new Mat4();
 
 const getUniformLocation = (program: WebGLProgram, uniform: string) => {
     let u = gl.getUniformLocation(program, uniform);
@@ -67,6 +74,60 @@ const getUniformLocation = (program: WebGLProgram, uniform: string) => {
     }
     return u;
 };
+
+function createVertexArray(data: vertex[], posAttrLoc: number, colAttrLoc: number) {
+    let v = gl.createVertexArray();
+    if (!v) {
+        throw new Error(`Failed to create vertex array`);
+    }
+
+    gl.bindVertexArray(v);
+
+    // create position buffer
+    let dataBuffer = gl.createBuffer();
+    if (!dataBuffer) {
+        throw new Error(`Failed to create buffer`);
+    }
+
+    const d = data
+        .map((v) => {
+            return [v.x, v.y, v.z, v.u, v.v, v.nx, v.ny, v.nz];
+        })
+        .flat();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, dataBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(d), gl.STATIC_DRAW);
+
+    // position
+    gl.enableVertexAttribArray(posAttrLoc);
+    let offset = 0;
+    const stride = 3 + 2 + 3;
+    gl.vertexAttribPointer(
+        posAttrLoc,
+        3,
+        gl.FLOAT,
+        false,
+        stride * Float32Array.BYTES_PER_ELEMENT,
+        offset * Float32Array.BYTES_PER_ELEMENT
+    );
+
+    // colour
+    gl.enableVertexAttribArray(colAttrLoc);
+    offset = 5;
+    gl.vertexAttribPointer(
+        colAttrLoc,
+        3,
+        gl.FLOAT,
+        true,
+        stride * Float32Array.BYTES_PER_ELEMENT,
+        offset * Float32Array.BYTES_PER_ELEMENT
+    );
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindVertexArray(null);
+
+    return v;
+}
 
 /**
  *
@@ -140,6 +201,8 @@ function createVertexArrayWithData(
     return v;
 }
 
+let squareVao: WebGLVertexArrayObject;
+
 /**
  *
  */
@@ -156,6 +219,13 @@ function setup() {
 
     worldMatrixUniform = getUniformLocation(program, "u_world");
     projectionMatrixUniform = getUniformLocation(program, "u_projection");
+    viewMatrixUniform = getUniformLocation(program, "u_view");
+
+    // read cube obj
+    getRemoteText(`/untitled.obj`).then((text) => {
+        const vertices = parseObj(text);
+        squareVao = createVertexArray(vertices, posAttrLoc, colAttrLoc);
+    });
 
     vao = createVertexArrayWithData(posAttrLoc, positions, colAttrLoc, colours);
 }
@@ -165,22 +235,28 @@ function setup() {
  * @param elapsedSeconds
  */
 function render(elapsedSeconds: number) {
-    // compute change
-    angle += elapsedSeconds * 2;
-
-    Mat4.identity(matProj);
-    //matProj = Mat4.ortho(0, gl.canvas.width, gl.canvas.height, 0, 400, -400);
-    matProj = Mat4.perspective(degreesToRadians(75), gl.canvas.width / gl.canvas.height, 0.1, 2000);
-
-    Mat4.identity(matWorld);
-    matWorld = Mat4.translation(new Vec3(0, 0, -400));
-    //matWorld = Mat4.multiply(matWorld, Mat4.rotationX(angle));
-    matWorld = Mat4.multiply(matWorld, Mat4.rotationY(angle));
-    //matWorld = Mat4.multiply(matWorld, Mat4.rotationZ(angle));
-
     // resize if needed
     resizeCanvas(gl.canvas as HTMLCanvasElement, displayWidth, displayHeight);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    // compute change
+    angle += elapsedSeconds * 2;
+
+    // view
+    Mat4.identity(matView);
+    let cameraMatrix = Mat4.identity();
+    cameraMatrix = Mat4.lookAt(cameraPosition, cameraTarget, new Vec3(0, 1, 0));
+
+    matView = Mat4.inverse(cameraMatrix);
+
+    // projection
+    Mat4.identity(matProj);
+    const aspect = gl.canvas.width / gl.canvas.height;
+    matProj = Mat4.perspective(degreesToRadians(75), aspect, 0.1, 2000);
+
+    Mat4.identity(matWorld);
+    matWorld = Mat4.translation(new Vec3(0, 0, 0));
+    matWorld = Mat4.multiply(matWorld, Mat4.rotationX(degreesToRadians(180)));
 
     // clear canvas
     gl.clearColor(Colours.CornflowerBlue.r, Colours.CornflowerBlue.g, Colours.CornflowerBlue.b, Colours.CornflowerBlue.a);
@@ -194,12 +270,21 @@ function render(elapsedSeconds: number) {
     gl.useProgram(program);
     gl.uniformMatrix4fv(worldMatrixUniform, false, matWorld.values);
     gl.uniformMatrix4fv(projectionMatrixUniform, false, matProj.values);
+    gl.uniformMatrix4fv(viewMatrixUniform, false, matView.values);
 
     // set vao
     gl.bindVertexArray(vao);
 
     const floats_per_vertex = 3;
     gl.drawArrays(gl.TRIANGLES, 0, positions.length / floats_per_vertex);
+
+    gl.bindVertexArray(squareVao);
+
+    Mat4.identity(matWorld);
+    matWorld = Mat4.scaling(50);
+
+    gl.uniformMatrix4fv(worldMatrixUniform, false, matWorld.values);
+    gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 
     // unset vao
     gl.bindVertexArray(null);
@@ -216,6 +301,15 @@ async function main() {
     // resize observer
     const resizeObserver = new ResizeObserver(onResize);
     resizeObserver.observe(canvas, { box: "content-box" });
+
+    canvas.addEventListener("mouseup", (event: MouseEvent) => {
+        console.log(event);
+    });
+    canvas.addEventListener("mousedown", (event: MouseEvent) => {});
+    canvas.addEventListener("wheel", (event: WheelEvent) => {
+        cameraPosition.x += event.deltaY * 0.1;
+        cameraPosition.z += event.deltaY * 0.1;
+    });
 
     setup();
 

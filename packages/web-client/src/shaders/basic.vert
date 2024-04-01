@@ -9,8 +9,9 @@ out vec4 v_color;
 
 uniform mat4 u_world;
 uniform mat4 u_projection;
+uniform mat4 u_view;
 
 void main() {
   v_color = a_color;
-  gl_Position = u_projection * u_world * a_position;
+  gl_Position = u_projection * u_view * u_world * a_position;
 }
